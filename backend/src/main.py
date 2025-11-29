@@ -67,7 +67,7 @@ def updateTask():
 @app.route("/get_tasks", methods=["GET"])
 def getTasks():
     return app.response_class(
-        response=json.dumps({"data", postgres.getTasks()}),
+        response=json.dumps({"data": postgres.getTasks()}),
         status=200,
         mimetype="application/json"
     )
