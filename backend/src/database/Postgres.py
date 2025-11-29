@@ -1,0 +1,61 @@
+import os
+import psycopg2
+
+class Postgres:
+
+    def __init__(self):
+        self.connection = psycopg2.connect(
+            database="bhl",
+            user="admin123",
+            password=os.getenv("POSTGRES_PSWD"),
+            host="localhost",
+            port=5432
+        )
+
+    def createUser(self, user_name: str, user_surname: str, rfid: str) -> None:
+        cursor = self.connection.cursor()
+        cursor.execute(
+            f"""
+                INSERT INTO users (social_credit, role_id, user_name, user_surname, rfid) VALUES
+                    (0, 2, '{user_name}', '{user_surname}', {rfid});
+            """
+        )
+        self.connection.commit()
+        cursor.close()
+
+    def getUserData(self, rfid: int) -> dict:
+        cursor = self.connection.cursor()
+        cursor.execute("SELECT * FROM users WHERE api_key=%s;", (rfid,))
+        result = cursor.fetchone()
+        cursor.close()
+        return {
+            "id": result[0], 
+            "social_credit": result[1],
+            "role_id": result[2], 
+            "user_name": result[3],
+            "user_surname": result[4],
+            "rfid": result[5]
+        }
+    
+    def getTasks(self):
+        cursor = self.connection.cursor()
+        cursor.execute("""SELECT * FROM tasks;""")
+        result = cursor.fetchall()
+        cursor.close()
+        return result
+
+    def updateTask(self, task_id: int, finished: bool, owner: int | None):
+        cursor = self.connection.cursor()
+
+        finished = "true" if finished else "false"
+        owner = str(owner) if owner is not None else "NULL"
+        task_id = str(task_id)
+        cursor.execute(
+            f"""
+            UPDATE tasks
+            SET finished={finished}, owner={owner}
+            WHERE id={task_id};
+            """
+        )
+        self.connection.commit()
+        cursor.close()
