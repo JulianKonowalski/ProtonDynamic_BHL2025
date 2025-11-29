@@ -14,18 +14,20 @@ class Postgres:
 
     def createUser(self, user_name: str, user_surname: str, rfid: str) -> None:
         cursor = self.connection.cursor()
-        cursor.execute(
-            f"""
-                INSERT INTO users (social_credit, role_id, user_name, user_surname, rfid) VALUES
-                    (0, 2, '{user_name}', '{user_surname}', {rfid});
-            """
-        )
-        self.connection.commit()
+        try:
+            cursor.execute(
+                f"""
+                    INSERT INTO users (social_credit, role_id, user_name, user_surname, rfid) VALUES
+                        (0, 2, '{user_name}', '{user_surname}', {rfid});
+                """
+            )
+            self.connection.commit()
+        except: self.connection.rollback()
         cursor.close()
 
     def getUserData(self, rfid: int) -> dict:
         cursor = self.connection.cursor()
-        cursor.execute("SELECT * FROM users WHERE api_key=%s;", (rfid,))
+        cursor.execute("SELECT * FROM users WHERE rfid=%s;", (rfid,))
         result = cursor.fetchone()
         cursor.close()
         return {
