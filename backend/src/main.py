@@ -1,10 +1,16 @@
+import os
 import json
 import enum
 import dotenv
+import pathlib
 from flask import Flask, request, make_response
+from flask_cors import CORS
 
 from database.Influx import Influxdb 
 from database.Postgres import Postgres
+from werkzeug.utils import secure_filename
+
+RCV_PATH: str = os.path.join(pathlib.Path(__file__).parent.resolve(), "..", "rcv")
 
 class AuthLevel(enum.Enum):
     ADMIN = 0
@@ -14,6 +20,17 @@ class AuthLevel(enum.Enum):
 dotenv.load_dotenv()
 
 app: Flask = Flask(__name__)
+UPLOAD_FOLDER = 'uploads'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+CORS(app)
+
 influx: Influxdb = Influxdb()
 postgres: Postgres = Postgres()
 
@@ -54,6 +71,16 @@ def getUserData():
         mimetype="application/json"
     )
 
+@app.rout('/update_sc', methods=["POST"])
+def updateSC():
+    data = request.get_json()
+    if not data: return make_response("Bad request", 400)
+
+    try: postgres.addUserCredit(data["social_credit"])
+    except KeyError: return make_response("Bad request", 400)
+
+    return make_response("Ok", 200)
+
 @app.route("/update_task", methods=["POST"])
 def updateTask():
     data = request.get_json()
@@ -89,6 +116,16 @@ def upload():
     if not sensor_data: return make_response("Unauthorized access", 401)
 
     data = request.get_json()
+
+    if data["humidity"] < 40:
+        tasks = postgres.getTasks()
+        latch = False
+        for task in tasks:
+            if task["type"] == 2 and not task["finished"]: 
+                latch = True
+                break
+        if not latch: postgres.createTask(2)
+
     influx.writeRecord(data["sensor_id"], data["temperature"], data["humidity"])
     return app.response_class(
         response=json.dumps({"data": data}),
@@ -96,11 +133,28 @@ def upload():
         mimetype="application/json"
     )
 
+@app.route('/upload_image', methods=['POST'])
+def upload_image():
+    if 'image' not in request.files:
+        return "No image received", 400
+
+    file = request.files['image']
+
+    if file.filename == '':
+        return "Empty filename", 400
+
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        return f"Saved {filename}", 200
+
+    return "Invalid file", 400
+
 @app.route("/get", methods=["GET"])
 def get():
-    data = request.get_json()
+    data = influx.readRecords("1m")
     return app.response_class(
-        response=json.dumps({"data": influx.readRecords(data["duration"])}),
+        response=json.dumps({"data": data}),
         status=200,
         mimetype="application/json"
     )
