@@ -2,6 +2,7 @@ import json
 import enum
 import dotenv
 from flask import Flask, request, make_response
+from flask_cors import CORS
 
 from database.Influx import Influxdb 
 from database.Postgres import Postgres
@@ -14,6 +15,8 @@ class AuthLevel(enum.Enum):
 dotenv.load_dotenv()
 
 app: Flask = Flask(__name__)
+CORS(app)
+
 influx: Influxdb = Influxdb()
 postgres: Postgres = Postgres()
 

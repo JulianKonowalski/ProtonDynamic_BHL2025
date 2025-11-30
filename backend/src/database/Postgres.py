@@ -68,7 +68,13 @@ class Postgres:
 
     def getTasks(self) -> list[dict]:
         cursor = self.connection.cursor()
-        cursor.execute("SELECT * FROM tasks;")
+        cursor.execute(
+            """
+                SELECT t.id, tt.name, t.finished, t.owner 
+                FROM tasks t JOIN task_types tt
+                ON t.type=tt.id;
+            """
+        )
         results = cursor.fetchall()
         cursor.close()
         data = []
