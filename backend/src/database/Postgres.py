@@ -25,11 +25,13 @@ class Postgres:
         except: self.connection.rollback()
         cursor.close()
 
-    def getUserData(self, rfid: int) -> dict:
+    def getUserData(self, rfid: int) -> dict | None:
         cursor = self.connection.cursor()
+        rfid=str(rfid)
         cursor.execute("SELECT * FROM users WHERE rfid=%s;", (rfid,))
         result = cursor.fetchone()
         cursor.close()
+        if not result: return None
         return {
             "id": result[0], 
             "social_credit": result[1],
@@ -39,6 +41,17 @@ class Postgres:
             "rfid": result[5]
         }
     
+    def getSensorData(self, api_key: str) -> dict | None:
+        cursor = self.connection.cursor()
+        cursor.execute("SELECT * FROM sensors WHERE api_key=%s", (api_key,))
+        result = cursor.fetchone()
+        cursor.close()
+        if not result: return None
+        return {
+            "id": result[0],
+            "api_key": result[1]
+        }
+
     def getTasks(self):
         cursor = self.connection.cursor()
         cursor.execute("""SELECT * FROM tasks;""")
