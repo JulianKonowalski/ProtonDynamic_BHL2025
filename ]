@@ -1,0 +1,52 @@
+import { useState } from "react";
+import Drawer from '@mui/material/Drawer';
+import Button from '@mui/material/Button';
+import Box from '@mui/material/Box';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemText from '@mui/material/ListItemText';
+
+import '../styles/App.css'
+
+export default function App() {
+  const [open, setOpen] = useState(false);
+  const toggleDrawer = (newOpen: boolean) => {
+    setOpen(newOpen);
+  };
+
+  const task_list = (
+    <Box sx={{width: 400}} role="presentation" onClick={(e) => { e.preventDefault(); toggleDrawer(false); }}>
+      <List>
+        {
+          ["koszenie", "lanie", "szczanie", "sranie"].map((task, idx) => (
+            <ListItem key={idx}>
+              <ListItemButton disabled={true}>
+                <ListItemText primary={task}/>
+              </ListItemButton>
+            </ListItem>
+          ))
+        }
+      </List>
+    </Box>
+  )
+
+  return(
+    <div>
+      <Button onClick={(e) => { e.preventDefault(); toggleDrawer(true); }}>
+        Open Drawer
+      </Button>
+      <Drawer open={open} onClose={(e) => { toggleDrawer(false); }}>
+        {task_list}
+      </Drawer>
+    </div>
+  );
+
+//  return (
+//    <div>
+//      <Button onClick={toggleDrawer(true)}>Open drawer</Button>
+//      <Drawer open={open} onClose={toggleDrawer(false)}>
+//      </Drawer>
+//    </div>
+//  );
+}

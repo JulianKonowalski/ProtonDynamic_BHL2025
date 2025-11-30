@@ -25,6 +25,21 @@ class Postgres:
         except: self.connection.rollback()
         cursor.close()
 
+    def addUserCredit(self, rfid: str, social_credit_change: int):
+        cursor = self.connection.cursor()
+        cursor.execute("SELECT * FROM users WHERE rfid=%s",(rfid))
+        result = cursor.fetchone()
+        social_credit = str(result[1] + social_credit_change)
+        cursor.execute(
+            f"""
+                UPDATE users
+                SET social_credit={social_credit}
+                WHERE rfid={rfid};
+            """
+        )
+        self.connection.commit()
+        cursor.close()
+
     def getUserData(self, rfid: int) -> dict | None:
         cursor = self.connection.cursor()
         rfid=str(rfid)
@@ -86,6 +101,18 @@ class Postgres:
                 "owner": result[3]
             })
         return data
+
+    def createTask(self, task_type: int) -> None:
+        cursor = self.connection.cursor()
+        task_type = str(task_type)
+        cursor.execute(
+            f"""
+                INSERT INTO tasks (type, finished, owner) VALUES
+                ({task_type}, false, NULL);
+            """
+        )
+        self.connection.commit()
+        cursor.close()
 
     def updateTask(self, task_id: int, finished: bool, owner: int | None):
         cursor = self.connection.cursor()
