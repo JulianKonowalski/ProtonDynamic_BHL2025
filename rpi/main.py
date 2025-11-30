@@ -62,7 +62,7 @@ def user_look_for_task(user_unique_id):
 
 def update_task_finished(unfinished_tasks: list):
     for task in unfinished_tasks:
-        led_set(f"{task['id']}. {task['type']} finished? Y-1, N-2")
+        led_set(f"{task['id']}. {task['type'].strip()} finished? Y-1, N-2")
         while True:
             pressed = get_press()
             if pressed == 1:
@@ -80,15 +80,16 @@ def choose_task(user_id):
         time.sleep(WAIT_AFTER_TEXT)
         return
     chosen = choose_from_list(
-        [f"{idx + 1}. {task['type']}" for idx, task in enumerate(todo_tasks)]
+        [f"{idx + 1}. {task['type'].strip()}" for idx, task in enumerate(todo_tasks)]
     )
     if chosen is None:
         led_set("Task selection cancelled")
         time.sleep(WAIT_AFTER_TEXT)
         return
     task = todo_tasks[chosen[0]]
-
     db.update_task(task["id"], False, user_id)
+    led_set("Task chosen successfully.")
+    time.sleep(WAIT_AFTER_TEXT)
 
 
 def get_tasks_to_do():
@@ -127,6 +128,8 @@ def wait_rfid():
 def choose_from_list(items: list[str]):
     curr_idx = 0
     max_idx = len(items) - 1
+    print(items)
+    led_set(f"{items[curr_idx]}. Select? Y-1, N-2")
 
     while True:
         press = get_press()
@@ -138,7 +141,7 @@ def choose_from_list(items: list[str]):
             return curr_idx, items[curr_idx]
         else:
             return None
-        led_set(f"{items[curr_idx]}. Select? Y-1, N-2")
+        led_set(f"{items[curr_idx]}. Select? UP-1, DWN-2, Y-3, N-4")
 
 
 if __name__ == "__main__":

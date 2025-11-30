@@ -1,7 +1,7 @@
 import requests
 import json
 
-IP = "http://10.88.2.66:5000"
+IP = "http://10.200.144.66:5000"
 REQUEST_TIMEOUT = 1  # s
 
 header = {"Content-Type": "application/json"}
@@ -19,6 +19,7 @@ def get_user(rfid: str):
             url, headers=header, data=json.dumps(payload), timeout=REQUEST_TIMEOUT
         )
     except:
+        return None
         raise DbConnectError()
     if response.status_code == 200:
         return response.json()["data"]
@@ -44,6 +45,8 @@ def get_tasks():
     try:
         response = requests.get(url, timeout=REQUEST_TIMEOUT)
     except:
+        print("err tasks")
+        return None
         raise DbConnectError()
     if response.status_code == 200:
         return response.json()["data"]
@@ -55,6 +58,7 @@ def get_task_types():
     try:
         response = requests.get(url, timeout=REQUEST_TIMEOUT)
     except:
+        print("err task types")
         raise DbConnectError()
     if response.status_code == 200:
         return response.json()["data"]
