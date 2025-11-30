@@ -17,15 +17,17 @@ app: Flask = Flask(__name__)
 influx: Influxdb = Influxdb()
 postgres: Postgres = Postgres()
 
-def authenticate(api_key: str) -> dict | None:
-    if not api_key: return None
-    user_data: dict = postgres.getUserData(api_key)
+def authenticateUser(rfid: str) -> dict | None:
+    if not rfid: return None
+    user_data: dict | None = postgres.getUserData(rfid)
     if not user_data: return None
     return user_data
 
-def authorize(user_data: dict, auth_level: AuthLevel) -> bool:
-    try: return user_data["role_id"] < auth_level.value
-    except KeyError: return False
+def authenticateSensor(api_key: str) -> dict | None:
+    if not api_key: return None
+    sensor_data: dict | None = postgres.getSensorData(api_key)
+    if not sensor_data: return None
+    return sensor_data
 
 @app.route("/create_user", methods=["POST"])
 def createUser():
@@ -45,6 +47,7 @@ def getUserData():
     try: user_data = postgres.getUserData(data["rfid"])
     except KeyError: return make_response("Bad request", 400)
 
+    if not user_data: return make_response("User not found", 404)
     return app.response_class(
         response=json.dumps({"data": user_data}),
         status=200,
@@ -74,9 +77,8 @@ def getTasks():
 
 @app.route("/upload", methods=["POST"])
 def upload():
-    user_data: dict | None = authenticate(request.headers.get("Authorization"))
-    if not user_data: return make_response("Unauthorized access", 401)
-    if not authorize(user_data, AuthLevel.SENSOR): return make_response("Forbidden access", 403)
+    sensor_data: dict | None = authenticateSensor(request.headers.get("Authorization"))
+    if not sensor_data: return make_response("Unauthorized access", 401)
 
     data = request.get_json()
     influx.writeRecord(data["sensor_id"], data["temperature"], data["humidity"])
@@ -88,9 +90,6 @@ def upload():
 
 @app.route("/get", methods=["GET"])
 def get():
-    user_data: dict | None = authenticate(request.headers.get("Authorization"))
-    if not user_data: return make_response("Unauthorized access", 401)
-
     data = request.get_json()
     return app.response_class(
         response=json.dumps({"data": influx.readRecords(data["duration"])}),
