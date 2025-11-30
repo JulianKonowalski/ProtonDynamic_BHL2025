@@ -71,7 +71,7 @@ def getUserData():
         mimetype="application/json"
     )
 
-@app.rout('/update_sc', methods=["POST"])
+@app.route('/update_sc', methods=["POST"])
 def updateSC():
     data = request.get_json()
     if not data: return make_response("Bad request", 400)
