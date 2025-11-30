@@ -52,12 +52,34 @@ class Postgres:
             "api_key": result[1]
         }
 
-    def getTasks(self):
+    def getTaskTypes(self) -> list[dict]:
         cursor = self.connection.cursor()
-        cursor.execute("""SELECT * FROM tasks;""")
-        result = cursor.fetchall()
+        cursor.execute("SELECT * FROM task_types;")
+        results = cursor.fetchall()
         cursor.close()
-        return result
+        data = []
+        for result in results:
+            data.append({
+                "id": result[0],
+                "name": result[1]
+            })
+        return data
+
+
+    def getTasks(self) -> list[dict]:
+        cursor = self.connection.cursor()
+        cursor.execute("SELECT * FROM tasks;")
+        results = cursor.fetchall()
+        cursor.close()
+        data = []
+        for result in results:
+            data.append({
+                "id": result[0],
+                "type": result[1],
+                "finished": result[2],
+                "owner": result[3]
+            })
+        return data
 
     def updateTask(self, task_id: int, finished: bool, owner: int | None):
         cursor = self.connection.cursor()
